@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Bot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Recipe Bot</h1>
+        </header>
+        <main>
+            <section class="form-section">
+                <form id="ingredientForm">
+                    <label for="ingredients">Enter ingredients (comma separated):</label>
+                    <input type="text" id="ingredients" name="ingredients" placeholder="e.g., onion, garlic, chicken">
+                    <button type="submit">Get Recipes</button>
+                </form>
+                <form id="recipeForm">
+                    <label for="recipeName">Enter recipe name:</label>
+                    <input type="text" id="recipeName" name="recipeName" placeholder="e.g., Chicken Soup">
+                    <button type="submit">Get Recipe Details</button>
+                </form>
+            </section>
+            <section id="result" class="result-section"></section>
+        </main>
+    </div>
+    <script>
+        document.getElementById('ingredientForm').onsubmit = function(e) {
+            e.preventDefault();
+            fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ingredients: document.getElementById('ingredients').value})
+            }).then(response => response.json()).then(data => {
+                let resultDiv = document.getElementById('result');
+                if (data.length === 0) {
+                    resultDiv.innerHTML = '<p>No matching recipes found.</p>';
+                } else {
+                    resultDiv.innerHTML = '<ul>' + data.map(recipe => `<li>${recipe}</li>`).join('') + '</ul>';
+                }
+            });
+        };
+
+        document.getElementById('recipeForm').onsubmit = function(e) {
+            e.preventDefault();
+            const recipeName = document.getElementById('recipeName').value;
+            fetch(`/recipe?name=${recipeName}`)
+                .then(response => response.json())
+                .then(data => {
+                    let resultDiv = document.getElementById('result');
+                    if (data.error) {
+                        resultDiv.innerHTML = `<p>${data.error}</p>`;
+                    } else {
+                        let recipeDetails = `
+                            <h2>${data.Name}</h2>
+                            <p><strong>Cuisine:</strong> ${data.Cuisine}</p>
+                            <p><strong>Category:</strong> ${data.CategoryBread}</p>
+                            <p><strong>Ingredients:</strong> ${data.Ingridients}</p>
+                            <p><strong>Preparation:</strong> ${data.PrepDetails}</p>
+                            <p><strong>Instructions:</strong> ${data.RecipeDetails}</p>
+                        `;
+                        resultDiv.innerHTML = recipeDetails;
+                    }
+                });
+        };
+    </script>
+</body>
+</html>
