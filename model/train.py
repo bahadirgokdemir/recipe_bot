@@ -1,36 +1,29 @@
 import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 import joblib
-from sklearn.naive_bayes import MultinomialNB
-
 import preprocess
 
 # Veriyi yükle
-data = pd.read_json('C:\\Users\\bahad\\PycharmProjects\\recipe_bot_project\\data\\recipe-ingredient-nutrition-dataset-turkish-english-.json')
-recipes = data['Recipe']
+data = pd.read_json('../data/recipe-ingredient-nutrition-dataset-turkish-english-.json')
 
-# Verileri işleme
-def preprocess_data(recipes):
-    texts = []
-    labels = []
-    for recipe_id, recipe in recipes.items():
-        if isinstance(recipe, dict):
-            texts.append(recipe['IngridientNames'] + " " + recipe['Name'])
-            labels.append(recipe['Name'])
-    return texts, labels
+# Veriyi işle
+# preprocess.py'deki preprocess_data fonksiyonunu çağırarak veriyi işler.
+processed_data, labels = preprocess.preprocess_data(data)
 
-texts, labels = preprocess_data(recipes)
+# Modeli eğit
+# Veriyi eğitim ve test setlerine böler.
+X_train, X_test, y_train, y_test = train_test_split(processed_data, labels, test_size=0.2, random_state=42)
 
-# Vektörleştirici ve model
-vectorizer = CountVectorizer()
-X = vectorizer.fit_transform(texts)
-model = MultinomialNB()
-model.fit(X, labels)
+# Metin verilerini TF-IDF (Term Frequency-Inverse Document Frequency) ile sayısal verilere dönüştürür.
+vectorizer = TfidfVectorizer()
+X_train_vec = vectorizer.fit_transform(X_train)
 
-# Modeli ve vektörleştiriciyi kaydet
-joblib.dump(model, 'C:\\Users\\bahad\\PycharmProjects\\recipe_bot_project\\model\\recipe_model.pkl')
-joblib.dump(vectorizer, 'C:\\Users\\bahad\\PycharmProjects\\recipe_bot_project\\model\\vectorizer.pkl')
+# Lojistik regresyon modeli oluşturur ve verileri kullanarak modeli eğitir.
+model = LogisticRegression()
+model.fit(X_train_vec, y_train)
 
-print("Model ve vektörleştirici başarıyla kaydedildi.")
+# Modeli ve vektörleştiriciyi kaydeder.
+joblib.dump(model, 'recipe_model.pkl')
+joblib.dump(vectorizer, 'vectorizer.pkl')
